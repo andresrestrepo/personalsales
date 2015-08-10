@@ -1,10 +1,12 @@
 -- Describe TBL_ORDER
-CREATE TABLE "tbl_order" (
-    "id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+CREATE TABLE tbl_order (
+    "id" INTEGER NOT NULL primary key autoincrement,
     "customer" TEXT NOT NULL,
     "date" INTEGER NOT NULL,
     "customer_address" TEXT,
-    "purchase_price" INTEGER NOT NULL
+    "purchase_price" INTEGER NOT NULL,
+    "customer_phone" TEXT,
+    "note" TEXT
 )
 
 -- Describe TBL_ORDER_DETAILS
