@@ -4,7 +4,7 @@ import time
 import tkMessageBox
 import datetime
 from config import dbconnection
-from gui import query_order_window
+from gui import query_order_window, payments_window
 from order import order_repository
 from order.order import Order
 from order.order_details import OrderDetails
@@ -142,11 +142,17 @@ def create_frame():
     def query_order():
         query_order_window.create_frame()
 
+    def payments():
+        payments_window.create_frame()
+
     btn_save = Tkinter.Button(text="Save Order", command=save_action)
     btn_save.place(x=20, y=420)
 
     btn_query_order = Tkinter.Button(text="Query Order", command=query_order)
     btn_query_order.place(x=120, y=420)
+
+    btn_payments = Tkinter.Button(text="Payments", command=payments)
+    btn_payments.place(x=225, y=420)
 
     btn_new_order_detail = Tkinter.Button(text="+", command=new_order_detail_action)
     btn_new_order_detail.place(x=450, y=290)
