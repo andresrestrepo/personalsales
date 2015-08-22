@@ -21,7 +21,10 @@ def get_total_capital_up_date(sql_connection):
     sql_cursor.execute(GET_TOTAL_CAPITAL_UP_DATE)
     result = sql_cursor.fetchone()
     sql_cursor.close()
-    return int(result[0])
+    if result[0]:
+        return int(result[0])
+    else:
+        return 0
 
 
 def get_total_all_orders(sql_connection):
@@ -29,7 +32,10 @@ def get_total_all_orders(sql_connection):
     sql_cursor.execute(GET_TOTAL_ALL_ORDERS)
     result = sql_cursor.fetchone()
     sql_cursor.close()
-    return int(result[0])
+    if result[0]:
+        return int(result[0])
+    else:
+        return 0
 
 
 def get_total_payments(sql_connection):
@@ -37,7 +43,10 @@ def get_total_payments(sql_connection):
     sql_cursor.execute(GET_TOTAL_PAYMENTS)
     result = sql_cursor.fetchone()
     sql_cursor.close()
-    return int(result[0])
+    if result[0]:
+        return int(result[0])
+    else:
+        return 0
 
 
 def get_debtors(sql_connection):

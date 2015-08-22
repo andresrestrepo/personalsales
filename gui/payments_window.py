@@ -127,8 +127,7 @@ def create_frame():
                                              "CONGRATULATIONS balance is positive :) \n" %
                              total_balance)
 
-        txt_query.insert(Tkinter.INSERT, "****Profit: %d, Estimate not real "
-                                         "in money \n" % profit)
+        txt_query.insert(Tkinter.INSERT, "****Profit: %d\n" % profit)
 
         txt_query.insert(Tkinter.INSERT, "\n***********DEBTORS***********\n\n")
         debtors = status_business_service.get_debtors(sql_connection)
@@ -139,8 +138,11 @@ def create_frame():
         for debtor in debtors:
             txt_query.insert(Tkinter.INSERT, "order: %s \n" % debtor["order_id"])
             txt_query.insert(Tkinter.INSERT, "customer: %s \n" % debtor["customer"])
-            txt_query.insert(Tkinter.INSERT, "order created %s days ago \n" %
-                             int(debtor["order_days_ago"]))
+            if int(debtor["order_days_ago"]) == 0:
+                txt_query.insert(Tkinter.INSERT, "order created today \n")
+            else:
+                txt_query.insert(Tkinter.INSERT, "order created %s days ago \n" %
+                                 int(debtor["order_days_ago"]))
 
             if debtor["last_payment_days_ago"]:
                 if int(debtor["last_payment_days_ago"]) == 0:
