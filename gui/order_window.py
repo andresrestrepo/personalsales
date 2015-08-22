@@ -3,26 +3,28 @@ import Tkinter
 import time
 import tkMessageBox
 import datetime
+import sqlite3
 from config import dbconnection
 from gui import query_order_window, payments_window
-from order import order_repository
+from order import order_service
 from order.order import Order
 from order.order_details import OrderDetails
+from order.order_exceptions import OrderDetailsEmptyException, \
+    PurchasePriceBiggerTotalOrderException
 
 
-def _save_order(customer, date, customer_address, customer_phone, purchase_price,
-                note, order_details):
-    order = Order(None, customer, date, customer_address,
-                  customer_phone, purchase_price, note, list())
+def _create_order_object(customer, date, customer_address, customer_phone,
+                         purchase_price, note, order_details):
 
+    int_purchase_price = int(purchase_price)
+    order = Order(None, customer or None, date or None, customer_address,
+                  customer_phone, int_purchase_price or None, note, list())
     for detail_info in order_details:
-        order_details = OrderDetails(None, detail_info[0], detail_info[1],
-                                     detail_info[2], None)
+        order_details = OrderDetails(None, int(detail_info[0]), detail_info[1],
+                                     int(detail_info[2]), None)
         order.order_details.append(order_details)
 
-    sql_connection = dbconnection.get_db_connection()
-    order_repository.save_order(sql_connection, order)
-    sql_connection.close()
+    return order
 
 
 def create_frame():
@@ -31,9 +33,6 @@ def create_frame():
     root.geometry('500x500')
     root.resizable(width=False, height=False)
     root.title("Order")
-
-    lbl_title = Tkinter.Label(root, text="__ORDER__")
-    lbl_title.place(x=225, y=1)
 
     lbl_customer = Tkinter.Label(root, text="Customer Name: ")
     lbl_customer.place(x=20, y=40)
@@ -63,7 +62,7 @@ def create_frame():
 
     lbl_note = Tkinter.Label(root, text="Note: ")
     lbl_note.place(x=20, y=190)
-    txt_note = ScrolledText.ScrolledText(wrap=Tkinter.WORD, height=5, width=40)
+    txt_note = ScrolledText.ScrolledText(wrap=Tkinter.WORD, height=5, width=44)
     txt_note.place(x=150, y=190)
 
     lbl_order_details = Tkinter.Label(root, text="__ORDER DETAILS__")
@@ -100,37 +99,44 @@ def create_frame():
         txt_description.delete(0, 'end')
         txt_unit_price.delete(0, 'end')
 
-    def is_invalid_data():
-        if len(order_details_list) == 0:
-            return "Please insert a order detail"
-        if not txt_customer.get():
-            return "Please insert a customer name"
-        if not txt_date.get():
-            return "Please insert a valid date"
-        if not txt_purchase_price:
-            return "Please insert a valid purchase price"
-        return False
-
     def save_action():
         result = tkMessageBox.askquestion("Validate Details info", order_details_list)
         if result == "yes":
-            message = is_invalid_data()
-            if message:
-                tkMessageBox.showinfo("Message", message)
+            try:
+                order = _create_order_object(
+                    txt_customer.get(),
+                    int(datetime.datetime.strptime(txt_date.get(),
+                                                   '%Y-%m-%d').strftime("%s")),
+                    txt_customer_address.get(),
+                    txt_customer_phone.get(),
+                    txt_purchase_price.get(),
+                    txt_note.get(1.0, Tkinter.END), order_details_list)
+            except ValueError as ex:
+                tkMessageBox.showinfo("Error", ex.message)
                 return
-            _save_order(txt_customer.get(),
-                        int(datetime.datetime.strptime(txt_date.get(),
-                                                       '%Y-%m-%d').strftime("%s")),
-                        txt_customer_address.get(),
-                        txt_customer_phone.get(),
-                        txt_purchase_price.get(),
-                        txt_note.get(1.0, Tkinter.END), order_details_list)
-            tkMessageBox.showinfo("Message", "save data ok!")
-            clear_fields()
+            sql_connection = dbconnection.get_db_connection()
+            try:
+                order_service.save_order(sql_connection, order)
+                clear_fields()
+                tkMessageBox.showinfo("Message", "save data ok!")
+            except sqlite3.IntegrityError, ex:
+                tkMessageBox.showinfo("Error", ex.message)
+            except OrderDetailsEmptyException, ex:
+                tkMessageBox.showinfo("Error", ex.message)
+            except PurchasePriceBiggerTotalOrderException, ex:
+                tkMessageBox.showinfo("Error", ex.message)
+            finally:
+                sql_connection.close()
 
     def new_order_detail_action():
-        order_details_list.append((txt_num_articles.get(), txt_description.get(),
-                                   txt_unit_price.get()))
+        num_articles = txt_num_articles.get()
+        description = txt_description.get()
+        unit_price = txt_unit_price.get()
+        if not num_articles or not description or not unit_price:
+            tkMessageBox.showinfo("Message", "all fields are required")
+            return
+        order_details_list.append((num_articles, description,
+                                   unit_price))
         txt_num_articles.delete(0, 'end')
         txt_description.delete(0, 'end')
         txt_unit_price.delete(0, 'end')

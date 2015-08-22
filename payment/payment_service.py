@@ -1,4 +1,4 @@
-from order import order_repository
+from order import order_repository, order_utils
 import payment_repository
 from payments_exceptions import PaymentExceedsValueDebtException, InvalidAmountToSave
 
@@ -13,9 +13,7 @@ def _validate_payment_before_save(sql_connection, payment):
                                                                    payment.order_id)
     payments = payment_repository.get_payments_by_order_id(sql_connection,
                                                            payment.order_id)
-
-    payment.amount = int(payment.amount)
-    total_order = _get_total_order(order_details)
+    total_order = order_utils.get_total_order(order_details)
     total_payments = _get_total_payments_up_date(payments)
     if payment.amount + total_payments > total_order:
         debt = total_order - total_payments
@@ -23,12 +21,6 @@ def _validate_payment_before_save(sql_connection, payment):
                                                % debt)
     if payment.amount <= 0:
         raise InvalidAmountToSave("Amount needs to be bigger than 0")
-
-
-def _get_total_order(order_details):
-    total = [order_detail.num_articles * order_detail.unit_price
-             for order_detail in order_details]
-    return sum(total)
 
 
 def _get_total_payments_up_date(payments):
